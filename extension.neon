@@ -1,12 +1,17 @@
 parameters:
     yii2:
-        config_path: null
+        application_id: null
     stubFiles:
         - stubs/BaseYii.stub
+    dynamicConstantNames:
+        - YII_DEBUG
+        - YII_ENV_DEV
+        - YII_ENV_PROD
+        - YII_ENV_TEST
 
 parametersSchema:
 	yii2: structure([
-		config_path: schema(string(), nullable())
+		application_id: schema(string(), nullable())
 	])
 
 services:
@@ -41,4 +46,4 @@ services:
         class: Proget\PHPStan\Yii2\Type\ContainerDynamicMethodReturnTypeExtension
         tags: [phpstan.broker.dynamicMethodReturnTypeExtension]
 
-    - Proget\PHPStan\Yii2\ServiceMap(%yii2.config_path%)
+    - Proget\PHPStan\Yii2\ServiceMap(%yii2.application_id%)

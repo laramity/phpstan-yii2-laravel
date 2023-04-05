@@ -9,6 +9,8 @@ use yii\base\BaseObject;
 
 final class ServiceMap
 {
+    private string $applicationId;
+
     /**
      * @var string[]
      */
@@ -19,18 +21,42 @@ final class ServiceMap
      */
     private $components = [];
 
-    public function __construct(string $configPath)
+    public function __construct(string $applicationId)
     {
-        if (!file_exists($configPath)) {
-            throw new \InvalidArgumentException(sprintf('Provided config path %s must exist', $configPath));
-        }
-
         \defined('YII_DEBUG') or \define('YII_DEBUG', true);
         \defined('YII_ENV_DEV') or \define('YII_ENV_DEV', false);
         \defined('YII_ENV_PROD') or \define('YII_ENV_PROD', false);
         \defined('YII_ENV_TEST') or \define('YII_ENV_TEST', true);
 
-        $config = require $configPath;
+        $this->applicationId = $applicationId;
+    }
+
+    public function getServiceClassFromNode(Node $node): ?string
+    {
+        if ($node instanceof Node\Scalar\String_ && isset($this->services[$node->value])) {
+            if (empty($this->services)) {
+                $this->buildServicesAndComponentsMap();
+            }
+
+            return $this->services[$node->value];
+        }
+
+        return null;
+    }
+
+    public function getComponentClassById(string $id): ?string
+    {
+        if (empty($this->components)) {
+            $this->buildServicesAndComponentsMap();
+        }
+
+        return $this->components[$id] ?? null;
+    }
+
+    private function buildServicesAndComponentsMap(): void
+    {
+        $config = $this->retrieveConfig();
+
         foreach ($config['container']['singletons'] ?? [] as $id => $service) {
             $this->addServiceDefinition($id, $service);
         }
@@ -55,18 +81,31 @@ final class ServiceMap
         }
     }
 
-    public function getServiceClassFromNode(Node $node): ?string
+    private function retrieveConfig(): array
     {
-        if ($node instanceof Node\Scalar\String_ && isset($this->services[$node->value])) {
-            return $this->services[$node->value];
+        $yiiConfig = app()->make('config')->get('yii');
+
+        $basePath = app()->make('path.base');
+        if (empty($basePath) || !is_dir($basePath)) {
+            throw new \InvalidArgumentException(sprintf("Provided base path %s is empty or doesn't exist", $basePath));
         }
 
-        return null;
-    }
+        $commonConfig = $yiiConfig['common'] ?? [];
+        $commonConfig['vendorPath'] = $basePath . '/vendor';
 
-    public function getComponentClassById(string $id): ?string
-    {
-        return $this->components[$id] ?? null;
+        if (!isset($yiiConfig[$this->applicationId])) {
+            throw new \InvalidArgumentException(sprintf("Provided application id %s doesn't have configuration", $this->applicationId));
+        }
+
+        $instanceConfig = $yiiConfig[$this->applicationId] ?? [];
+        $instanceConfig['basePath'] = $basePath . '/legacy/' . $this->applicationId;
+        $instanceConfig['runtimePath'] = $basePath . '/legacy/runtime/' . $this->applicationId;
+
+        $params = [
+            'params' => $yiiConfig['params'] ?? []
+        ];
+
+        return \yii\helpers\ArrayHelper::merge($commonConfig, $instanceConfig, $params);
     }
 
     /**
