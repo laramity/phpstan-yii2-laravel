@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace Proget\PHPStan\Yii2;
 
+use Closure;
+use InvalidArgumentException;
 use PhpParser\Node;
+use ReflectionException;
+use ReflectionFunction;
+use ReflectionNamedType;
+use RuntimeException;
 use yii\base\BaseObject;
+use yii\helpers\ArrayHelper;
 
 final class ServiceMap
 {
@@ -14,19 +21,19 @@ final class ServiceMap
     /**
      * @var string[]
      */
-    private $services = [];
+    private array $services = [];
 
     /**
      * @var array<string, string>
      */
-    private $components = [];
+    private array $components = [];
 
     public function __construct(string $applicationId)
     {
-        \defined('YII_DEBUG') or \define('YII_DEBUG', true);
-        \defined('YII_ENV_DEV') or \define('YII_ENV_DEV', false);
-        \defined('YII_ENV_PROD') or \define('YII_ENV_PROD', false);
-        \defined('YII_ENV_TEST') or \define('YII_ENV_TEST', true);
+        defined('YII_DEBUG') or define('YII_DEBUG', true);
+        defined('YII_ENV_DEV') or define('YII_ENV_DEV', false);
+        defined('YII_ENV_PROD') or define('YII_ENV_PROD', false);
+        defined('YII_ENV_TEST') or define('YII_ENV_TEST', true);
 
         $this->applicationId = $applicationId;
     }
@@ -66,13 +73,13 @@ final class ServiceMap
         }
 
         foreach ($config['components'] ?? [] as $id => $component) {
-            if (\is_object($component)) {
-                $this->components[$id] = \get_class($component);
+            if (is_object($component)) {
+                $this->components[$id] = get_class($component);
                 continue;
             }
 
-            if (!\is_array($component)) {
-                throw new \RuntimeException(\sprintf('Invalid value for component with id %s. Expected object or array.', $id));
+            if (!is_array($component)) {
+                throw new RuntimeException(sprintf('Invalid value for component with id %s. Expected object or array.', $id));
             }
 
             if (null !== $class = $component['class'] ?? null) {
@@ -87,14 +94,14 @@ final class ServiceMap
 
         $basePath = app()->make('path.base');
         if (empty($basePath) || !is_dir($basePath)) {
-            throw new \InvalidArgumentException(sprintf("Provided base path %s is empty or doesn't exist", $basePath));
+            throw new InvalidArgumentException(sprintf("Provided base path %s is empty or doesn't exist", $basePath));
         }
 
         $commonConfig = $yiiConfig['common'] ?? [];
         $commonConfig['vendorPath'] = $basePath . '/vendor';
 
         if (!isset($yiiConfig[$this->applicationId])) {
-            throw new \InvalidArgumentException(sprintf("Provided application id %s doesn't have configuration", $this->applicationId));
+            throw new InvalidArgumentException(sprintf("Provided application id %s doesn't have configuration", $this->applicationId));
         }
 
         $instanceConfig = $yiiConfig[$this->applicationId] ?? [];
@@ -105,13 +112,13 @@ final class ServiceMap
             'params' => $yiiConfig['params'] ?? []
         ];
 
-        return \yii\helpers\ArrayHelper::merge($commonConfig, $instanceConfig, $params);
+        return ArrayHelper::merge($commonConfig, $instanceConfig, $params);
     }
 
     /**
-     * @param string|\Closure|array<mixed> $service
+     * @param string|Closure|array<mixed> $service
      *
-     * @throws \RuntimeException|\ReflectionException
+     * @throws RuntimeException|ReflectionException
      */
     private function addServiceDefinition(string $id, $service): void
     {
@@ -119,27 +126,27 @@ final class ServiceMap
     }
 
     /**
-     * @param string|\Closure|array<mixed> $service
+     * @param string|Closure|array<mixed> $service
      *
-     * @throws \RuntimeException|\ReflectionException
+     * @throws RuntimeException|ReflectionException
      */
     private function guessServiceDefinition(string $id, $service): string
     {
-        if (\is_string($service) && \class_exists($service)) {
+        if (is_string($service) && class_exists($service)) {
             return $service;
         }
 
-        if ($service instanceof \Closure || \is_string($service)) {
-            $returnType = (new \ReflectionFunction($service))->getReturnType();
-            if (!$returnType instanceof \ReflectionNamedType) {
-                throw new \RuntimeException(\sprintf('Please provide return type for %s service closure', $id));
+        if ($service instanceof Closure || is_string($service)) {
+            $returnType = (new ReflectionFunction($service))->getReturnType();
+            if (!$returnType instanceof ReflectionNamedType) {
+                throw new RuntimeException(sprintf('Please provide return type for %s service closure', $id));
             }
 
             return $returnType->getName();
         }
 
-        if (!\is_array($service)) {
-            throw new \RuntimeException(\sprintf('Unsupported service definition for %s', $id));
+        if (!is_array($service)) {
+            throw new RuntimeException(sprintf('Unsupported service definition for %s', $id));
         }
 
         if (isset($service['class'])) {
@@ -150,10 +157,10 @@ final class ServiceMap
             return $service[0]['class'];
         }
 
-        if (\is_subclass_of($id, BaseObject::class)) {
+        if (is_subclass_of($id, BaseObject::class)) {
             return $id;
         }
 
-        throw new \RuntimeException(\sprintf('Cannot guess service definition for %s', $id));
+        throw new RuntimeException(sprintf('Cannot guess service definition for %s', $id));
     }
 }

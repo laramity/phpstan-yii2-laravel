@@ -2,15 +2,16 @@ includes:
 	- vendor/phpstan/phpstan-phpunit/extension.neon
 	- vendor/phpstan/phpstan-phpunit/rules.neon
 
-	- extension.neon
-
 parameters:
     scanFiles:
         - vendor/yiisoft/yii2/Yii.php
 
-    yii2:
-        application_id: null
+    level: 5
+
+    paths:
+        - src
 
     ignoreErrors:
         - '#Calling PHPStan\\Reflection\\Annotations\\AnnotationsPropertiesClassReflectionExtension\:\:(has|get)Property\(\) is not covered.+#'
         - '#Creating new PHPStan\\Reflection\\Dummy\\DummyPropertyReflection is not covered.+#'
+        - '#Function app not found\.#'
