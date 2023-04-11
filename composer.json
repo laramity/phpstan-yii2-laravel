@@ -1,7 +1,7 @@
 {
-    "name": "proget-hq/phpstan-yii2",
+    "name": "miserenkov/phpstan-yii2-laravel",
     "type": "library",
-    "description": "Yii2 extension for PHPStan",
+    "description": "Yii2 extension for PHPStan with Laravel proxy",
     "license": "MIT",
     "authors": [
         {
