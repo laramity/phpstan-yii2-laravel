@@ -46,6 +46,6 @@ final class ContainerDynamicMethodReturnTypeExtension implements DynamicMethodRe
             }
         }
 
-        return ParametersAcceptorSelector::selectSingle($methodReflection->getVariants())->getReturnType();
+        return ParametersAcceptorSelector::selectFromArgs($scope, $methodCall->getArgs(), $methodReflection->getVariants())->getReturnType();
     }
 }

@@ -50,7 +50,7 @@ final class ActiveRecordDynamicStaticMethodReturnTypeExtension implements Dynami
         $className = $methodCall->class;
         $name = $scope->resolveName($className);
 
-        $returnType = ParametersAcceptorSelector::selectSingle($methodReflection->getVariants())->getReturnType();
+        $returnType = ParametersAcceptorSelector::selectFromArgs($scope, $methodCall->getArgs(), $methodReflection->getVariants())->getReturnType();
         if ($returnType instanceof ThisType) {
             return new ActiveRecordObjectType($name);
         }
